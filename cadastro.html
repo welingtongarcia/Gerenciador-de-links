@@ -163,6 +163,10 @@
 
       if (oculto) {
         novaLinha += "|oculto";
+
+        // Codifica a linha inteira: grupo, nome, classificação, link,
+        // observação e marcação oculto.
+        novaLinha = "ENC|" + codificarBase64(novaLinha);
       }
 
       resultado.value += novaLinha + "\n";
@@ -171,6 +175,14 @@
       document.getElementById("link").value = "";
       document.getElementById("observacao").value = "";
       document.getElementById("oculto").checked = false;
+    }
+
+    function codificarBase64(texto) {
+      return btoa(
+        encodeURIComponent(texto).replace(/%([0-9A-F]{2})/g, function(match, codigo) {
+          return String.fromCharCode("0x" + codigo);
+        })
+      );
     }
 
     function baixarArquivo() {

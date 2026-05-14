@@ -40,26 +40,41 @@ fetch("links.txt")
   Formatos aceitos no links.txt:
 
   Grupo|Nome|Classificação|Link
+  Grupo|Nome|Classificação|Link|Observação
   Grupo|Nome|Link
   Link
 
-  Todos também aceitam |oculto no final:
+  Linhas ocultas podem ficar totalmente codificadas no formato:
 
-  Grupo|Nome|Classificação|Link|oculto
-  Grupo|Nome|Link|oculto
-  Link|oculto
+  ENC|TEXTO_EM_BASE64
 
-  Também corrige linhas com campo vazio acidental:
-  Grupo|Nome||Medios|https://site.com|oculto
+  Ao decodificar, o conteúdo interno precisa terminar com |oculto.
+  Exemplo interno antes da codificação:
+  Grupo|Nome|Classificação|Link|Observação|oculto
+
+  Observação: Base64 não é criptografia forte; é apenas codificação para
+  não deixar os dados legíveis diretamente no arquivo links.txt.
 */
 function converterLinhaEmLink(linha) {
+  // Linhas que começam com ENC| estão inteiras codificadas em Base64.
+  // Isso esconde grupo, nome, classificação, link e observação no arquivo TXT.
+  if (linha.startsWith("ENC|")) {
+    const conteudoCodificado = linha.substring(4).trim();
+    const linhaDecodificada = decodificarBase64(conteudoCodificado);
+
+    if (!linhaDecodificada) {
+      return null;
+    }
+
+    linha = linhaDecodificada.trim();
+  }
+
   let partes = linha
     .split("|")
     .map(parte => parte.trim());
 
   let oculto = false;
 
-  // Se a linha terminar com |oculto, marca como oculto e remove esse campo
   if (partes.length > 0 && partes[partes.length - 1].toLowerCase() === "oculto") {
     oculto = true;
     partes.pop();
@@ -68,65 +83,103 @@ function converterLinhaEmLink(linha) {
   // Remove campos vazios acidentais, por exemplo: Nome||Medios
   partes = partes.filter(parte => parte !== "");
 
-  // Formato: https://site.com
-  if (partes.length === 1 && partes[0].startsWith("http")) {
+  if (partes.length === 0) {
+    return null;
+  }
+
+  // Formato: Link puro
+  if (partes.length === 1) {
+    const linkFinal = obterLinkFinal(partes[0], oculto);
+
+    if (!linkFinal) {
+      return null;
+    }
+
     return {
       grupo: "Sem classificação",
-      nome: partes[0],
+      nome: linkFinal,
       classificacao: "Sem classificação",
-      link: partes[0],
+      link: linkFinal,
       observacao: "",
       oculto
     };
   }
 
-  // Formato: https://site.com|observação
-  if (partes.length >= 2 && partes[0].startsWith("http")) {
-    return {
-      grupo: "Sem classificação",
-      nome: partes[0],
-      classificacao: "Sem classificação",
-      link: partes[0],
-      observacao: partes.slice(1).join(" - "),
-      oculto
-    };
-  }
-
-  // Procura o campo do link em qualquer posição
-  const link = partes.find(parte => parte.startsWith("http"));
-
-  if (!link) {
-    return null;
-  }
-
-  const indiceLink = partes.indexOf(link);
-
   // Formato: Grupo|Nome|Link
-  if (indiceLink === 2) {
+  if (partes.length === 3) {
+    const linkFinal = obterLinkFinal(partes[2], oculto);
+
+    if (!linkFinal) {
+      return null;
+    }
+
     return {
       grupo: partes[0],
       nome: partes[1],
       classificacao: "Sem classificação",
-      link,
-      observacao: partes.slice(indiceLink + 1).join(" - "),
+      link: linkFinal,
+      observacao: "",
       oculto
     };
   }
 
   // Formato: Grupo|Nome|Classificação|Link
   // Formato: Grupo|Nome|Classificação|Link|Observação
-  if (indiceLink >= 3) {
+  if (partes.length >= 4) {
+    const linkFinal = obterLinkFinal(partes[3], oculto);
+
+    if (!linkFinal) {
+      return null;
+    }
+
     return {
       grupo: partes[0],
       nome: partes[1],
-      classificacao: partes[indiceLink - 1] || "Sem classificação",
-      link,
-      observacao: partes.slice(indiceLink + 1).join(" - "),
+      classificacao: partes[2] || "Sem classificação",
+      link: linkFinal,
+      observacao: partes.slice(4).join(" - "),
       oculto
     };
   }
 
   return null;
+}
+
+function obterLinkFinal(valor, oculto) {
+  if (!valor) {
+    return "";
+  }
+
+  if (valor.startsWith("http")) {
+    return valor;
+  }
+
+  // Compatibilidade com versões antigas: caso exista link oculto antigo
+  // em que apenas o link foi codificado em Base64.
+  if (oculto) {
+    const linkDecodificado = decodificarBase64(valor);
+
+    if (linkDecodificado && linkDecodificado.startsWith("http")) {
+      return linkDecodificado;
+    }
+  }
+
+  return "";
+}
+
+function decodificarBase64(texto) {
+  try {
+    return decodeURIComponent(
+      Array.prototype.map
+        .call(atob(texto), caractere => {
+          return "%" + ("00" + caractere.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join("")
+    );
+  } catch (erro) {
+    console.warn("Não foi possível decodificar uma linha oculta:", texto);
+    return "";
+  }
 }
 
 function normalizarClasse(texto) {
