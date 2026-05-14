@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Biblioteca de Links</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <header>
+    <h1>📚 Biblioteca de Links</h1>
+    <p>Organizada por categorias personalizadas</p>
+  </header>
+
+  <main>
+    <div class="topo-acoes">
+
+      <input type="text" id="pesquisa" placeholder="Pesquisar link...">
+
+      <a href="cadastro.html" class="btn-add" title="Cadastrar novo link">
+        +
+      </a>
+
+      <select id="modoVisualizacao" class="modo-visualizacao" title="Modo de visualização">
+        <option value="cards">Cards</option>
+        <option value="lista">Lista</option>
+      </select>
+
+      <select id="ordemItens" class="modo-visualizacao" title="Ordenação dos itens">
+        <option value="alfabetica">A-Z</option>
+        <option value="classificacao">Por classificação</option>
+      </select>
+
+    </div>
+    <section id="legenda" class="legenda"></section>
+
+    <section id="biblioteca" class="biblioteca">
+      <p>Carregando biblioteca...</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Biblioteca de links</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+
+</html>

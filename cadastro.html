@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastrar Link</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111827;
+      color: white;
+      padding: 30px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #1f2937;
+      padding: 25px;
+      border-radius: 16px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #c4b5fd;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    input, select, textarea, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 6px;
+      border-radius: 10px;
+      border: none;
+      font-size: 1rem;
+    }
+
+    button {
+      margin-top: 20px;
+      background: #7c3aed;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #9333ea;
+    }
+
+    textarea {
+      height: 180px;
+      resize: vertical;
+    }
+
+    #observacao {
+      height: 90px;
+    }
+
+    #resultado {
+      height: 180px;
+    }
+
+    .campo-oculto {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .campo-oculto input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      accent-color: #7c3aed;
+    }
+
+    .campo-oculto label {
+      margin: 0;
+    }
+
+    .voltar {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: #93c5fd;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>📚 Cadastrar Link</h1>
+
+    <label>Grupo / Seção</label>
+    <input type="text" id="grupo" placeholder="Ex: Ação, Seinen, Clássicos">
+
+    <label>Nome do link</label>
+    <input type="text" id="nome" placeholder="Ex: One Piece">
+
+    <label>Classificação</label>
+    <select id="classificacao">
+      <option value="Muito bons">Muito bons</option>
+      <option value="Bons">Bons</option>
+      <option value="Medios">Médios</option>
+      <option value="Ruins">Ruins</option>
+      <option value="Sem classificação">Sem classificação</option>
+    </select>
+
+    <div class="campo-oculto">
+      <input type="checkbox" id="oculto">
+      <label for="oculto">Link oculto</label>
+    </div>
+
+    <label>Link</label>
+    <input type="url" id="link" placeholder="https://site.com/manga">
+
+    <label>Observação</label>
+    <textarea id="observacao" placeholder="Ex: site com capítulos completos, scans em boa qualidade, lembrar de ler depois..."></textarea>
+
+    <button onclick="adicionarLink()">Adicionar link</button>
+
+    <label>Conteúdo para o arquivo links.txt</label>
+    <textarea id="resultado" readonly></textarea>
+
+    <button onclick="baixarArquivo()">Baixar links.txt</button>
+
+    <a class="voltar" href="index.html">Voltar para a biblioteca</a>
+  </div>
+
+  <script>
+    const resultado = document.getElementById("resultado");
+
+    function adicionarLink() {
+      const grupo = document.getElementById("grupo").value.trim();
+      const nome = document.getElementById("nome").value.trim();
+      const classificacao = document.getElementById("classificacao").value;
+      const link = document.getElementById("link").value.trim();
+      const observacao = document.getElementById("observacao").value.trim();
+      const oculto = document.getElementById("oculto").checked;
+
+      if (!grupo || !nome || !link) {
+        alert("Preencha grupo, nome e link.");
+        return;
+      }
+
+      let novaLinha = "";
+
+      if (classificacao === "Sem classificação") {
+        novaLinha = `${grupo}|${nome}|${link}`;
+      } else {
+        novaLinha = `${grupo}|${nome}|${classificacao}|${link}`;
+      }
+
+      if (observacao) {
+        novaLinha += `|${observacao}`;
+      }
+
+      if (oculto) {
+        novaLinha += "|oculto";
+      }
+
+      resultado.value += novaLinha + "\n";
+
+      document.getElementById("nome").value = "";
+      document.getElementById("link").value = "";
+      document.getElementById("observacao").value = "";
+      document.getElementById("oculto").checked = false;
+    }
+
+    function baixarArquivo() {
+      const conteudo = resultado.value;
+
+      if (!conteudo.trim()) {
+        alert("Nenhum link cadastrado.");
+        return;
+      }
+
+      const arquivo = new Blob([conteudo], { type: "text/plain" });
+      const url = URL.createObjectURL(arquivo);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "links.txt";
+      a.click();
+
+      URL.revokeObjectURL(url);
+    }
+  </script>
+
+</body>
+</html>
