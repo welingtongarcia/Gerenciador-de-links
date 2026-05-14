@@ -1,93 +1,161 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <title>Cadastrar Link</title>
 
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
       background: #111827;
       color: white;
-      padding: 30px;
+      padding: 30px 15px;
     }
 
     .container {
-      max-width: 600px;
+      width: 100%;
+      max-width: 620px;
       margin: auto;
       background: #1f2937;
-      padding: 25px;
-      border-radius: 16px;
+      padding: 32px;
+      border-radius: 18px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
     }
 
     h1 {
       text-align: center;
       color: #c4b5fd;
+      margin-bottom: 28px;
+      font-size: 1.8rem;
     }
 
     label {
       display: block;
-      margin-top: 15px;
+      margin-top: 16px;
+      margin-bottom: 6px;
       font-weight: bold;
+      font-size: 0.95rem;
     }
 
-    input, select, textarea, button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 6px;
-      border-radius: 10px;
-      border: none;
-      font-size: 1rem;
-    }
-
+    input,
+    select,
+    textarea,
     button {
-      margin-top: 20px;
-      background: #7c3aed;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: Arial, Helvetica, sans-serif;
     }
 
-    button:hover {
-      background: #9333ea;
+    input,
+    select {
+      height: 48px;
+      padding: 0 14px;
+      margin-bottom: 7px;
     }
 
     textarea {
-      height: 180px;
+      min-height: 120px;
+      padding: 14px;
       resize: vertical;
     }
 
-    #observacao {
-      height: 90px;
+    input,
+    select,
+    textarea {
+      background: #f9fafb;
+      color: #111827;
+      outline: none;
     }
 
-    #resultado {
-      height: 180px;
+    input:focus,
+    select:focus,
+    textarea:focus {
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.45);
+    }
+
+    .dica {
+      margin-top: 8px;
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      line-height: 1.4;
     }
 
     .campo-oculto {
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-top: 15px;
+      margin-top: 18px;
+      padding: 12px 14px;
+      background: #111827;
+      border: 1px solid #374151;
+      border-radius: 12px;
     }
 
     .campo-oculto input {
       width: 18px;
       height: 18px;
-      margin: 0;
       accent-color: #7c3aed;
     }
 
     .campo-oculto label {
       margin: 0;
+      font-size: 0.95rem;
+    }
+
+    button {
+      margin-top: 22px;
+      height: 50px;
+      background: linear-gradient(135deg, #7c3aed, #9333ea);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: linear-gradient(135deg, #8b5cf6, #a855f7);
+    }
+
+    #observacao {
+      min-height: 110px;
+    }
+
+    #resultado {
+      min-height: 180px;
     }
 
     .voltar {
       display: block;
       text-align: center;
-      margin-top: 20px;
+      margin-top: 22px;
       color: #93c5fd;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .voltar:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 15px 10px;
+      }
+
+      .container {
+        padding: 22px;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
     }
   </style>
 </head>
@@ -98,7 +166,15 @@
     <h1>📚 Cadastrar Link</h1>
 
     <label>Grupo / Seção</label>
-    <input type="text" id="grupo" placeholder="Ex: Ação, Seinen, Clássicos">
+    <select id="grupoExistente">
+      <option value="">Carregando grupos...</option>
+    </select>
+
+    <input type="text" id="novoGrupo" placeholder="Ou digite um novo grupo/seção">
+
+    <p class="ajuda">
+      Os grupos de links ocultos só aparecem depois de marcar "Link oculto" e digitar a senha.
+    </p>
 
     <label>Nome do link</label>
     <input type="text" id="nome" placeholder="Ex: One Piece">
@@ -121,7 +197,8 @@
     <input type="url" id="link" placeholder="https://site.com/manga">
 
     <label>Observação</label>
-    <textarea id="observacao" placeholder="Ex: site com capítulos completos, scans em boa qualidade, lembrar de ler depois..."></textarea>
+    <textarea id="observacao"
+      placeholder="Ex: site com capítulos completos, scans em boa qualidade, lembrar de ler depois..."></textarea>
 
     <button onclick="adicionarLink()">Adicionar link</button>
 
@@ -135,9 +212,109 @@
 
   <script>
     const resultado = document.getElementById("resultado");
+    const grupoExistente = document.getElementById("grupoExistente");
+    const novoGrupo = document.getElementById("novoGrupo");
+    const checkboxOculto = document.getElementById("oculto");
+
+    let gruposOcultosLiberados = false;
+
+    carregarGruposExistentes(false);
+
+    checkboxOculto.addEventListener("change", () => {
+      if (checkboxOculto.checked && !gruposOcultosLiberados) {
+        const senha = prompt("Digite a senha para liberar grupos ocultos:");
+
+        if (senha === "oculto") {
+          gruposOcultosLiberados = true;
+          alert("Grupos ocultos liberados para cadastro.");
+          carregarGruposExistentes(true);
+        } else {
+          alert("Senha incorreta.");
+          checkboxOculto.checked = false;
+          carregarGruposExistentes(false);
+        }
+      }
+
+      if (!checkboxOculto.checked && !gruposOcultosLiberados) {
+        carregarGruposExistentes(false);
+      }
+    });
+
+    function carregarGruposExistentes(incluirOcultos) {
+      grupoExistente.innerHTML = `<option value="">Carregando grupos...</option>`;
+
+      fetch("links.txt")
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("Arquivo links.txt não encontrado");
+          }
+
+          return response.text();
+        })
+        .then(texto => {
+          const grupos = new Set();
+
+          texto
+            .split(/\r?\n/)
+            .map(linha => linha.trim())
+            .filter(linha => linha !== "")
+            .filter(linha => !linha.startsWith("#"))
+            .forEach(linha => {
+              if (linha.startsWith("ENC|")) {
+                const codificado = linha.substring(4).trim();
+                const decodificado = decodificarBase64(codificado);
+
+                if (!decodificado) {
+                  return;
+                }
+
+                linha = decodificado.trim();
+              }
+
+              let partes = linha.split("|").map(parte => parte.trim());
+              let linhaOculta = false;
+
+              if (partes.length > 0 && partes[partes.length - 1].toLowerCase() === "oculto") {
+                linhaOculta = true;
+                partes.pop();
+              }
+
+              if (linhaOculta && !incluirOcultos) {
+                return;
+              }
+
+              partes = partes.filter(parte => parte !== "");
+
+              if (partes.length >= 3 && !partes[0].startsWith("http")) {
+                grupos.add(partes[0]);
+              }
+            });
+
+          grupoExistente.innerHTML = `<option value="">Selecione um grupo existente</option>`;
+
+          [...grupos]
+            .sort((a, b) => a.localeCompare(b, "pt-BR"))
+            .forEach(grupo => {
+              const option = document.createElement("option");
+              option.value = grupo;
+              option.textContent = grupo;
+              grupoExistente.appendChild(option);
+            });
+
+          if (grupos.size === 0) {
+            grupoExistente.innerHTML = `<option value="">Nenhum grupo encontrado</option>`;
+          }
+        })
+        .catch(erro => {
+          console.error(erro);
+          grupoExistente.innerHTML = `<option value="">Não foi possível carregar grupos</option>`;
+        });
+    }
 
     function adicionarLink() {
-      const grupo = document.getElementById("grupo").value.trim();
+      const grupoSelecionado = grupoExistente.value.trim();
+      const grupoNovo = novoGrupo.value.trim();
+      const grupo = grupoNovo || grupoSelecionado;
       const nome = document.getElementById("nome").value.trim();
       const classificacao = document.getElementById("classificacao").value;
       const link = document.getElementById("link").value.trim();
@@ -163,9 +340,6 @@
 
       if (oculto) {
         novaLinha += "|oculto";
-
-        // Codifica a linha inteira: grupo, nome, classificação, link,
-        // observação e marcação oculto.
         novaLinha = "ENC|" + codificarBase64(novaLinha);
       }
 
@@ -175,14 +349,34 @@
       document.getElementById("link").value = "";
       document.getElementById("observacao").value = "";
       document.getElementById("oculto").checked = false;
+      grupoExistente.value = "";
+      novoGrupo.value = "";
+
+      if (!oculto && grupoNovo) {
+        carregarGruposExistentes(gruposOcultosLiberados);
+      }
     }
 
     function codificarBase64(texto) {
       return btoa(
-        encodeURIComponent(texto).replace(/%([0-9A-F]{2})/g, function(match, codigo) {
+        encodeURIComponent(texto).replace(/%([0-9A-F]{2})/g, function (match, codigo) {
           return String.fromCharCode("0x" + codigo);
         })
       );
+    }
+
+    function decodificarBase64(texto) {
+      try {
+        return decodeURIComponent(
+          Array.prototype.map
+            .call(atob(texto), caractere => {
+              return "%" + ("00" + caractere.charCodeAt(0).toString(16)).slice(-2);
+            })
+            .join("")
+        );
+      } catch {
+        return "";
+      }
     }
 
     function baixarArquivo() {
@@ -206,4 +400,5 @@
   </script>
 
 </body>
+
 </html>
